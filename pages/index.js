@@ -11,15 +11,13 @@ export default function Home() {
 
   async function fetchLinks() {
     const res = await fetch("/api/links");
-    setLinks(await res.json());
+    const data = await res.json();
+    setLinks(data);
   }
 
   useEffect(() => {
-    document.body.classList.add("dark");
-    if (localStorage.getItem("theme") === "light") {
-      document.body.classList.remove("dark");
-      document.body.classList.add("light");
-    }
+    const theme = localStorage.getItem("theme") || "dark";
+    document.body.className = theme;
     fetchLinks();
     const interval = setInterval(fetchLinks, 3000);
     return () => clearInterval(interval);
@@ -32,341 +30,288 @@ export default function Home() {
     const res = await fetch("/api/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, code }),
+      body: JSON.stringify({ url, code: code || undefined }),
     });
     const data = await res.json();
-    if (res.status !== 201) {
-      setError(data.error);
+    if (!res.ok) {
+      setError(data.error || "Something went wrong");
       return;
     }
     setUrl("");
     setCode("");
-    setSuccess(`Short link created — Code: ${data.code}`);
+    setSuccess(`Created! -> ${window.location.origin}/${data.code}`);
     fetchLinks();
   }
 
-  function showDelete(code) {
-    setDeleteCode(code);
-    setShowModal(true);
-  }
-
-  async function confirmDelete() {
-    await fetch(`/api/links/${deleteCode}`, { method: "DELETE" });
-    setShowModal(false);
-    fetchLinks();
-  }
-
-  async function safeCopy(text) {
+  const safeCopy = async (text) => {
     try {
-      await navigator?.clipboard?.writeText(text);
-      alert("Copied!");
+      await navigator.clipboard.writeText(text);
     } catch {
-      const t = document.createElement("input");
-      t.value = text;
-      document.body.appendChild(t);
-      t.select();
+      const i = document.createElement("input");
+      i.value = text;
+      document.body.appendChild(i);
+      i.select();
       document.execCommand("copy");
-      t.remove();
-      alert("Copied!");
+      document.body.removeChild(i);
     }
-  }
+    alert("Copied!");
+  };
 
-  function toggleTheme() {
-    if (document.body.classList.contains("light")) {
-      document.body.classList.remove("light");
-      document.body.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.body.classList.remove("dark");
-      document.body.classList.add("light");
-      localStorage.setItem("theme", "light");
-    }
-  }
+  const toggleTheme = () => {
+    const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
+    document.body.className = newTheme;
+    localStorage.setItem("theme", newTheme);
+  };
 
   return (
-    <div className="container">
-      <div className="themeToggle" onClick={toggleTheme}>
-        <div className="thumb"></div>
+    <>
+      <div className="theme-toggle" onClick={toggleTheme}>
+        <div className="thumb" />
       </div>
 
-      <h1 className="title">TinyLink – URL Shortener</h1>
+      <div className="container">
+        <h1 className="title">TinyLink – URL Shortener</h1>
 
-      <div className="card">
-        <form onSubmit={createLink} className="form">
-          <input
-            type="text"
-            placeholder="Enter Long URL"
-            className="input"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-
-          <input
-            type="text"
-            placeholder="Custom Code (Optional)"
-            className="input"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-
-          <button className="button">Create Short Link</button>
-
-          {error && <div className="error">{error}</div>}
-          {success && <div className="success">{success}</div>}
-        </form>
-      </div>
-
-      <div className="table-wrapper desktop-only">
-        <table className="clean-table">
-          <thead>
-            <tr>
-              <th style={{ width: "23%" }}>Short URL</th>
-              <th style={{ width: "12%" }}>Code</th>
-              <th style={{ width: "33%" }}>Long URL</th>
-              <th style={{ width: "10%" }}>Clicks</th>
-              <th style={{ width: "22%" }}>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {links.map((l) => {
-              const shortUrl = `${window.location.origin}/${l.code}`;
-              return (
-                <tr key={l.code}>
-                  <td><a href={shortUrl} target="_blank">{shortUrl}</a></td>
-                  <td>{l.code}</td>
-                  <td className="long-url">
-                    <a href={l.url} target="_blank">{l.url}</a>
-                  </td>
-                  <td>{l.clicks}</td>
-
-                  <td className="btns">
-                    <button className="copy" onClick={() => safeCopy(shortUrl)}>Copy</button>
-                    <a className="stats" href={`/code/${l.code}`}>Stats</a>
-                    <button className="delete" onClick={() => showDelete(l.code)}>Delete</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-
-        </table>
-      </div>
-
-      <div className="mobile-list">
-        {links.map((l) => {
-          const shortUrl = `${window.location.origin}/${l.code}`;
-          return (
-            <div className="link-card" key={l.code}>
-              <div className="field">
-                <label>Short URL</label>
-                <a href={shortUrl} target="_blank">{shortUrl}</a>
-              </div>
-
-              <div className="field">
-                <label>Code</label>
-                <p>{l.code}</p>
-              </div>
-
-              <div className="field">
-                <label>Long URL</label>
-                <a href={l.url} target="_blank" className="long">{l.url}</a>
-              </div>
-
-              <div className="field">
-                <label>Clicks</label>
-                <p>{l.clicks}</p>
-              </div>
-
-              <div className="mobile-btns">
-                <button className="copy">Copy</button>
-                <a className="stats" href={`/code/${l.code}`}>Stats</a>
-                <button className="delete" onClick={() => showDelete(l.code)}>Delete</button>
-              </div>
+        <div className="form-card">
+          <form onSubmit={createLink}>
+            <div className="input-wrapper">
+              <input
+                type="url"
+                placeholder="https://example.com/very-long-url..."
+                className="main-input"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+              />
             </div>
-          );
-        })}
-      </div>
 
-      {showModal && (
-        <div className="overlay">
-          <div className="popup">
-            <h3>Delete Link?</h3>
-            <p>Delete <b>{deleteCode}</b>?</p>
+            <div className="input-wrapper">
+              <input
+                type="text"
+                placeholder="Custom code (optional)"
+                className="main-input secondary"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\s/g, "").toLowerCase())}
+                maxLength="20"
+              />
+            </div>
 
-            <div className="popup-buttons">
-              <button className="btn cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn delete" onClick={confirmDelete}>Delete</button>
+            <button type="submit" className="create-btn">
+              Create Short Link
+            </button>
+
+            {error && <div className="msg error">{error}</div>}
+            {success && <div className="msg success">{success}</div>}
+          </form>
+        </div>
+
+        <div className="desktop-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Short URL</th>
+                <th>Code</th>
+                <th>Long URL</th>
+                <th>Clicks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {links.map((l) => {
+                const short = `${window.location.origin}/${l.code}`;
+                return (
+                  <tr key={l.code}>
+                    <td>
+                      <a href={short} target="_blank" rel="noopener">
+                        {short}
+                      </a>
+                    </td>
+                    <td>
+                      <code>{l.code}</code>
+                    </td>
+                    <td className="long">
+                      <a href={l.url} target="_blank" rel="noopener">
+                        {l.url}
+                      </a>
+                    </td>
+                    <td>{l.clicks}</td>
+                    <td className="actions">
+                      <button onClick={() => safeCopy(short)} className="act copy">
+                        Copy
+                      </button>
+                      <a href={`/code/${l.code}`} className="act stats">
+                        Stats
+                      </a>
+                      <button
+                        onClick={() => {
+                          setDeleteCode(l.code);
+                          setShowModal(true);
+                        }}
+                        className="act delete"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mobile-cards">
+          {links.map((l) => {
+            const short = `${window.location.origin}/${l.code}`;
+            return (
+              <div key={l.code} className="mobile-card">
+                <div className="mobile-row">
+                  <span>Short URL</span>
+                  <a href={short} target="_blank" rel="noopener">
+                    {short}
+                  </a>
+                </div>
+                <div className="mobile-row">
+                  <span>Code</span>
+                  <code>{l.code}</code>
+                </div>
+                <div className="mobile-row">
+                  <span>Long URL</span>
+                  <a href={l.url} target="_blank" rel="noopener" className="long-mobile">
+                    {l.url}
+                  </a>
+                </div>
+                <div className="mobile-row">
+                  <span>Clicks</span>
+                  <strong>{l.clicks}</strong>
+                </div>
+                <div className="mobile-actions">
+                  <button onClick={() => safeCopy(short)} className="act copy">
+                    Copy
+                  </button>
+                  <a href={`/code/${l.code}`} className="act stats">
+                    Stats
+                  </a>
+                  <button
+                    onClick={() => {
+                      setDeleteCode(l.code);
+                      setShowModal(true);
+                    }}
+                    className="act delete"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Delete this link?</h3>
+              <p>
+                Permanently delete <b>{deleteCode}</b>?
+              </p>
+              <div className="modal-btns">
+                <button onClick={() => setShowModal(false)} className="cancel">
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await fetch(`/api/links/${deleteCode}`, { method: "DELETE" });
+                    setShowModal(false);
+                    fetchLinks();
+                  }}
+                  className="confirm-delete"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <style>{`
+      <style jsx global>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; transition: 0.3s; min-height: 100vh; }
+        body.dark { background: #0a0a0a; color: #eee; }
+        body.light { background: #f9fafb; color: #111; }
+        body::before { content: ""; position: fixed; inset: 0; background: linear-gradient(135deg, #667eea, #764ba2); filter: blur(120px); opacity: 0.2; z-index: -1; }
 
-/* MAIN FIXES INCLUDED BELOW ↓ */
+        .theme-toggle { position: fixed; top: 18px; right: 18px; z-index: 9999; width: 56px; height: 32px; background: #333; border-radius: 50px; padding: 4px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .theme-toggle .thumb { width: 24px; height: 24px; background: white; border-radius: 50%; transition: transform 0.3s ease; }
+        body.light .theme-toggle { background: #999; }
+        body.light .thumb { transform: translateX(24px); }
 
-/* GLOBAL */
-body { margin:0; padding:0; transition:.3s; }
-body.dark { background:#0a0a0a; color:white; }
-body.light { background:white; color:#111; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; padding-top: 80px; }
+        .title { text-align: center; font-size: 2.5rem; font-weight: 900; margin: 0 0 30px; background: linear-gradient(to right, #a855f7, #3b82f6); -webkit-background-clip: text; color: transparent; }
 
-/* FIX LIGHT THEME TEXT */
-body.light * {
-  color:#111 !important;
-}
+        .form-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 28px; margin-bottom: 30px; }
+        body.light .form-card { background: white; border: 1px solid #e5e7eb; }
 
-/* CONTAINER */
-.container { max-width:900px; margin:auto; padding:20px; }
+        .input-wrapper { margin-bottom: 20px; }
+        .input-wrapper:last-of-type { margin-bottom: 0; }
 
-/* THEME TOGGLE */
-.themeToggle {
-  width:50px; height:26px; background:#444;
-  border-radius:50px; padding:3px; cursor:pointer;
-  position:absolute; right:20px; top:20px;
-}
-.thumb {
-  width:20px; height:20px; background:white;
-  border-radius:50%; transition:.3s;
-}
-body.light .themeToggle { background:#ccc; }
-body.light .thumb { transform:translateX(24px); }
+        .main-input { width: 100%; padding: 18px 20px; font-size: 1.05rem; border: 2px solid transparent; border-radius: 14px; outline: none; transition: all 0.3s ease; background: rgba(255,255,255,0.12); color: inherit; }
+        .main-input::placeholder { color: #aaaaaa; opacity: 0.8; font-weight: 500; }
+        .main-input:focus { border-color: #7c3aed; background: rgba(255,255,255,0.18); box-shadow: 0 0 0 4px rgba(124,58,237,0.25); transform: translateY(-1px); }
+        .main-input.secondary { font-size: 1rem; padding: 16px 20px; }
 
-/* TITLE */
-.title {
-  text-align:center; font-size:32px; margin-top:50px;
-  font-weight:800;
-  background:linear-gradient(to right,#a855f7,#3b82f6);
-  -webkit-background-clip:text; color:transparent;
-}
+        body.light .main-input { background: #ffffff; border: 2px solid #e2e8f0; color: #111; }
+        body.light .main-input::placeholder { color: #94a3b8; }
+        body.light .main-input:focus { box-shadow: 0 0 0 4px rgba(124,58,237,0.15); }
 
-/* CARD */
-.card {
-  background:#1e1e1e; padding:20px; border-radius:14px;
-  margin-bottom:25px;
-}
-body.light .card { background:#efefef; }
+        .create-btn { margin-top: 24px; padding: 18px; font-size: 1.15rem; font-weight: 700; border: none; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #3b82f6); color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
+        .create-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,58,237,0.5); }
 
-/* FORM */
-.form { display:grid; gap:12px; }
-.input { padding:12px; border-radius:8px; border:none; background:white; color:black; }
-body.dark .input { background:#333; color:white; }
+        .msg { margin-top: 12px; padding: 12px; border-radius: 8px; text-align: center; font-weight: 500; }
+        .error { background: #fee2e2; color: #dc2626; }
+        .success { background: #dcfce7; color: #16a34a; }
 
-.button {
-  padding:12px; border:none; border-radius:8px;
-  background:linear-gradient(to right,#7c3aed,#2563eb);
-  color:white; font-size:16px;
-}
+        .desktop-table { display: block; }
+        .mobile-cards { display: none; }
 
-.error { color:#ff5252 !important; }
-.success { color:#4ade80 !important; }
+        table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.2); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        body.light table { background: white; border: 1px solid #e5e7eb; }
+        th, td { padding: 14px; text-align: left; }
+        th { background: rgba(0,0,0,0.4); font-weight: 600; }
+        body.light th { background: #f1f5f9; }
 
-/* TABLE */
-.table-wrapper {
-  background:#111; padding:18px;
-  border-radius:12px; border:1px solid #222;
-}
-body.light .table-wrapper { background:#f2f2f2; border-color:#ccc; }
+        .actions { white-space: nowrap; }
+        .act { padding: 8px 12px; margin-right: 6px; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+        .copy { background: #2563eb; color: white; }
+        .stats { background: #facc15; color: black; }
+        .delete { background: #dc2626; color: white; }
 
-.clean-table { width:100%; border-collapse:collapse; }
+        @media (max-width: 768px) {
+          .desktop-table { display: none; }
+          .mobile-cards { display: block; }
+          .input-wrapper { margin-bottom: 22px; }
+          .main-input { padding: 20px 22px; font-size: 1.1rem; }
+          .create-btn { padding: 20px; font-size: 1.2rem; margin-top: 28px; }
 
-th {
-  text-align:left; padding:12px;
-  background:#181818;
-  border-bottom:2px solid #222; color:#ccc;
-}
-body.light th { background:#e1e1e1; color:black; border-color:#ccc; }
+          .mobile-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+          body.light .mobile-card { background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-td {
-  padding:12px; border-bottom:1px solid #222; color:#ddd;
-}
-body.light td { color:black; border-color:#ccc; }
+          .mobile-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; }
+          body.light .mobile-row { border-color: #e5e7eb; }
+          .mobile-row:last-of-type { border: none; }
+          .mobile-row span:first-child { opacity: 0.8; min-width: 100px; }
 
-.clean-table a { color:#60a5fa; }
-body.light .clean-table a { color:#2563eb !important; }
+          .mobile-actions { display: flex; gap: 10px; margin-top: 16px; }
+          .mobile-actions .act { flex: 1; padding: 14px; font-size: 1rem; }
+        }
 
-/* BUTTONS */
-.btns {
-  display:flex;
-  gap:6px;
-  justify-content:space-between;
-}
-.copy, .stats, .delete {
-  padding:8px 10px;
-  font-size:14px;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
-  flex:1;
-  text-align:center;
-}
-.copy { background:#2563eb; color:white !important; }
-.stats { background:#facc15; color:black !important; }
-.delete { background:#dc2626; color:white !important; }
-
-/* MOBILE */
-.mobile-list { display:none; }
-
-@media(max-width:650px){
-  .desktop-only { display:none; }
-  .mobile-list { display:block; }
-
-  .link-card {
-    background:#151515;
-    padding:15px;
-    border-radius:10px;
-    border:1px solid #222;
-    margin-bottom:15px;
-  }
-  body.light .link-card { background:#efefef; border-color:#ccc; }
-
-  label { opacity:0.9 !important; }
-
-  a { color:#60a5fa !important; }
-  body.light a { color:#2563eb !important; }
-
-  /* FIXED BUTTON WIDTH */
-  .mobile-btns {
-    margin-top:12px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-
-  .mobile-btns .copy,
-  .mobile-btns .stats,
-  .mobile-btns .delete {
-    width:100%;
-    display:block;
-    text-align:center;
-    padding:12px;
-    font-size:15px;
-  }
-}
-
-/* MODAL */
-.overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.85);
-  display:flex; justify-content:center; align-items:center;
-}
-.popup {
-  width:300px; background:#1e1e1e;
-  padding:25px; border-radius:12px; text-align:center;
-}
-body.light .popup { background:white; color:black; }
-
-.popup-buttons {
-  display:flex; gap:10px; margin-top:20px;
-}
-
-.btn {
-  flex:1; padding:10px; border:none;
-  border-radius:10px; cursor:pointer;
-}
-.cancel { background:#777; color:white !important; }
-.delete { background:#dc2626; color:white !important; }
-
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal { background: #1a1a1a; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #333; }
+        body.light .modal { background: white; color: #111; border: 1px solid #ddd; }
+        .modal-btns { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .cancel { background: #666; color: white; }
+        .confirm-delete { background: #dc2626; color: white; }
       `}</style>
-    </div>
+    </>
   );
 }

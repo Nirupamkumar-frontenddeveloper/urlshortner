@@ -2,94 +2,78 @@ import { query } from "../../lib/db";
 import { useEffect } from "react";
 
 export default function Stats({ data }) {
-  
   useEffect(() => {
-    if (!localStorage.getItem("theme")) {
-      document.body.classList.add("dark");
-    } else {
-      const t = localStorage.getItem("theme");
-      document.body.classList.remove("dark", "light");
-      document.body.classList.add(t);
-    }
+    const theme = localStorage.getItem("theme") || "dark";
+    document.body.className = theme; // simple & solid
   }, []);
 
-  function toggleTheme() {
-    if (document.body.classList.contains("dark")) {
-      document.body.classList.remove("dark");
-      document.body.classList.add("light");
-      localStorage.setItem("theme", "light");
-    } else {
-      document.body.classList.remove("light");
-      document.body.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    }
-  }
+  const toggleTheme = () => {
+    const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
+    document.body.className = newTheme;
+    localStorage.setItem("theme", newTheme);
+  };
 
   if (!data) {
     return (
-      <div className="container">
-        <h1 className="title">Stats Not Found</h1>
-        <a href="/" className="back-btn">⬅ Back to Dashboard</a>
-        <style>{styles}</style>
+      <div className="wrapper">
+        <div className="notfound">Stats Not Found</div>
+        <a href="/" className="backbtn">Back to Dashboard</a>
+        <style jsx global>{styles}</style>
       </div>
     );
   }
 
   return (
-    <div className="container">
-
-      <div className="themeToggle" onClick={toggleTheme}>
-        <div className="thumb"></div>
+    <>
+      {/* Fixed Toggle - Top Right */}
+      <div className="toggle" onClick={toggleTheme}>
+        <div className="thumb" />
       </div>
 
-      <h1 className="title">Stats for: {data.code}</h1>
+      <div className="wrapper">
+        <h1 className="title">Stats for: {data.code}</h1>
 
-      <div className="card">
+        <div className="card">
+          <div className="row">
+            <span>Short Code</span>
+            <span>{data.code}</span>
+          </div>
+          <div className="row">
+            <span>Target URL</span>
+            <a href={data.url} target="_blank" rel="noopener" className="url">
+              {data.url}
+            </a>
+          </div>
+          <div className="row">
+            <span>Total Clicks</span>
+            <span>{data.clicks}</span>
+          </div>
+          <div className="row">
+            <span>Last Clicked</span>
+            <span>{data.last_clicked || "Never"}</span>
+          </div>
+          <div className="row">
+            <span>Created At</span>
+            <span>{data.created_at}</span>
+          </div>
 
-        <div className="row">
-          <span className="label">Short Code:</span>
-          <span className="value">{data.code}</span>
+          {/* Back button inside card */}
+          <a href="/" className="backbtn">
+            Back to Dashboard
+          </a>
         </div>
-
-        <div className="row">
-          <span className="label">Target URL:</span>
-          <span className="value">
-            <a href={data.url} target="_blank" className="link">{data.url}</a>
-          </span>
-        </div>
-
-        <div className="row">
-          <span className="label">Total Clicks:</span>
-          <span className="value">{data.clicks}</span>
-        </div>
-
-        <div className="row">
-          <span className="label">Last Clicked:</span>
-          <span className="value">{data.last_clicked || "Never"}</span>
-        </div>
-
-        <div className="row">
-          <span className="label">Created At:</span>
-          <span className="value">{data.created_at}</span>
-        </div>
-
-        <a href="/" className="back-btn">⬅ Back to Dashboard</a>
       </div>
 
-      <style>{styles}</style>
-    </div>
+      <style jsx global>{styles}</style>
+    </>
   );
 }
 
-/* SERVER SIDE */
 export async function getServerSideProps({ params }) {
   const { code } = params;
-
   const r = await query("SELECT * FROM links WHERE code=$1", [code]);
 
-  if (r.rowCount === 0) {
-    return { props: { data: null } };
-  }
+  if (r.rowCount === 0) return { props: { data: null } };
 
   const row = r.rows[0];
 
@@ -99,155 +83,128 @@ export async function getServerSideProps({ params }) {
         code: row.code,
         url: row.url,
         clicks: row.clicks,
-        last_clicked: row.last_clicked ? new Date(row.last_clicked).toISOString() : null,
-        created_at: row.created_at ? new Date(row.created_at).toISOString() : null
-      }
-    }
+        last_clicked: row.last_clicked
+          ? new Date(row.last_clicked).toLocaleString()
+          : null,
+        created_at: new Date(row.created_at).toLocaleDateString(),
+      },
+    },
   };
 }
 
-/* CSS */
 const styles = `
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; transition: 0.3s; min-height:100vh; }
+  body.dark { background: #0f0f0f; color: #eee; }
+  body.light { background: #f8fafc; color: #222; }
 
-body { margin:0; padding:0; transition:.3s; }
+  body::before {
+    content:"";
+    position:fixed;
+    inset:0;
+    background:linear-gradient(120deg,#3b82f6,#a855f7,#ec4899);
+    filter:blur(120px);
+    opacity:0.18;
+    z-index:-1;
+    animation:move 15s infinite alternate;
+  }
+  @keyframes move { 0%{transform:translate(-10%,-10%)} 100%{transform:translate(10%,10%)} }
 
-/* DARK MODE */
-body.dark { background:#0a0a0a; color:white; }
+  /* Fixed Toggle */
+  .toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 60px;
+    height: 34px;
+    background: #333;
+    border-radius: 50px;
+    padding: 5px;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  }
+  body.light .toggle { background: #999; }
+  .thumb {
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  body.light .thumb { transform: translateX(26px); }
 
-/* LIGHT MODE */
-body.light { background:#ffffff; color:#111; }
-body.light * { color:#111 !important; }
-
-/* Animated Background */
-body::before {
-  content:"";
-  position:fixed;
-  inset:0;
-  background:linear-gradient(120deg,#3b82f6,#a855f7,#ec4899);
-  filter:blur(130px);
-  opacity:0.20;
-  animation:bgMove 12s infinite alternate;
-  z-index:-1;
-}
-@keyframes bgMove {
-  0%{transform:translateX(-20%);}
-  100%{transform:translateX(20%);}
-}
-
-/* Theme Toggle */
-.themeToggle {
-  width:50px; height:26px;
-  background:#444;
-  border-radius:50px;
-  padding:3px;
-  cursor:pointer;
-  position:absolute;
-  right:20px; top:20px;
-}
-.thumb {
-  width:20px; height:20px;
-  background:white;
-  border-radius:50%;
-  transition:.3s;
-}
-body.light .themeToggle { background:#ccc; }
-body.light .thumb { transform:translateX(24px); }
-
-/* Layout */
-.container {
-  max-width:650px;
-  margin:auto;
-  padding:25px 20px;
-}
-
-/* Title */
-.title {
-  text-align:center;
-  font-size:32px;
-  margin-bottom:20px;
-  font-weight:800;
-  background:linear-gradient(to right,#a855f7,#3b82f6);
-  -webkit-background-clip:text;
-  color:transparent;
-}
-
-/* Card */
-.card {
-  background:rgba(255,255,255,0.1);
-  padding:22px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.25);
-  backdrop-filter:blur(12px);
-}
-body.light .card {
-  background:#f2f2f2;
-  border-color:#ccc;
-}
-
-/* Rows */
-.row {
-  display:flex;
-  justify-content:space-between;
-  padding:12px 0;
-  border-bottom:1px solid rgba(255,255,255,0.25);
-}
-body.light .row {
-  border-color:#ccc;
-}
-
-.label { font-weight:600; opacity:0.9; }
-.value { font-weight:500; }
-
-.link {
-  color:#60a5fa;
-  text-decoration:none;
-}
-body.light .link { color:#2563eb !important; }
-.link:hover { text-decoration:underline; }
-
-/* Back Button */
-.back-btn {
-  margin-top:18px;
-  display:inline-block;
-  padding:10px 16px;
-  border-radius:8px;
-  background:#2563eb;
-  color:white !important;
-  text-decoration:none;
-}
-.back-btn:hover { opacity:0.85; }
-
-/* MOBILE FIX */
-@media(max-width:600px){
-
-  .row {
-    flex-direction:column;
-    text-align:left;
-    padding:14px 0;
-    gap:6px;
+  .wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 100px 20px 40px;
+    text-align: center;
   }
 
-  .label {
-    font-size:15px;
-  }
-
-  .value, .link {
-    font-size:15px;
-    word-break:break-all;
-  }
-
-  .container {
-    padding:15px;
+  .title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    background: linear-gradient(to right, #a855f7, #3b82f6);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 30px;
   }
 
   .card {
-    padding:18px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 18px;
+    padding: 30px;
+    text-align: left;
+  }
+  body.light .card {
+    background: rgba(255,255,255,0.95);
+    border: 1px solid #ddd;
   }
 
-  .back-btn {
-    width:100%;
-    text-align:center;
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    font-size: 1.05rem;
   }
-}
+  body.light .row { border-color: #e0e0e0; }
+  .row:last-of-type { border:none; }
+  .row span:first-child { font-weight: 600; opacity: 0.9; }
+  .url { color: #60a5fa; word-break: break-all; }
+  body.light .url { color: #2563eb; }
 
+  .backbtn {
+    display: block;
+    margin-top: 25px;
+    padding: 14px;
+    background: #3b82f6;
+    color: white;
+    text-align: center;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s;
+  }
+  .backbtn:hover { background: #2563eb; transform: translateY(-2px); }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .wrapper { padding: 90px 15px 30px; }
+    .title { font-size: 2rem; }
+    .card { padding: 22px; }
+    .row { flex-direction: column; gap: 6px; font-size: 1rem; }
+    .toggle { top:15px; right:15px; width:52px; height:30px; }
+    .thumb { width:20px; height:20px; }
+    body.light .thumb { transform: translateX(22px); }
+  }
+
+  .notfound {
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 100px;
+  }
 `;
