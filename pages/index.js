@@ -17,16 +17,14 @@ export default function Home() {
   useEffect(() => {
     fetchLinks();
 
+    const interval = setInterval(fetchLinks, 3000);
+
     if (localStorage.getItem("theme") === "light") {
       document.body.classList.remove("dark");
       document.body.classList.add("light");
     }
 
-    const closeOnEsc = (e) => {
-      if (e.key === "Escape") setShowModal(false);
-    };
-    document.addEventListener("keydown", closeOnEsc);
-    return () => document.removeEventListener("keydown", closeOnEsc);
+    return () => clearInterval(interval);
   }, []);
 
   async function createLink(e) {
@@ -84,7 +82,7 @@ export default function Home() {
   return (
     <div className="container">
 
-      <button className="theme-toggle" onClick={toggleTheme}>🌓 Theme</button>
+      <button className="theme-toggle" onClick={toggleTheme}>🌓</button>
 
       <h1 className="title">TinyLink – URL Shortener</h1>
 
@@ -117,7 +115,7 @@ export default function Home() {
         <table className="table">
           <thead>
             <tr>
-              <th>Short URL</th>
+              <th>Short</th>
               <th>Code</th>
               <th>URL</th>
               <th>Clicks</th>
@@ -127,7 +125,11 @@ export default function Home() {
 
           <tbody>
             {links.map((l) => {
-              const shortUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${l.code}`;
+              const shortUrl =
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/${l.code}`
+                  : "";
+
               return (
                 <tr key={l.code}>
                   <td className="shorturl">
@@ -170,18 +172,16 @@ export default function Home() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">Delete Link?</h2>
-            <p className="modal-text">
-              Are you sure you want to delete <b>{deleteCode}</b>?
-            </p>
+        <div className="overlay" onClick={() => setShowModal(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Link?</h3>
+            <p>Are you sure you want to delete <b>{deleteCode}</b>?</p>
 
-            <div className="modal-buttons">
-              <button className="modal-cancel" onClick={() => setShowModal(false)}>
+            <div className="popup-buttons">
+              <button className="btn cancel" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
-              <button className="modal-delete" onClick={confirmDelete}>
+              <button className="btn delete" onClick={confirmDelete}>
                 Delete
               </button>
             </div>
@@ -190,10 +190,12 @@ export default function Home() {
       )}
 
       <style>{`
+
 body {
   margin: 0;
   padding: 0;
-  transition: 0.4s;
+  transition: .4s;
+  overflow-x: hidden;
 }
 
 body.dark {
@@ -209,11 +211,11 @@ body.dark::before, body.light::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: linear-gradient(120deg,#3b82f6,#a855f7,#ec4899);
-  filter: blur(140px);
-  animation: bgMove 10s infinite alternate;
-  opacity: 0.17;
   z-index: -1;
+  animation: bgMove 10s infinite alternate;
+  background: linear-gradient(120deg,#3b82f6,#a855f7,#ec4899);
+  filter: blur(150px);
+  opacity: .18;
 }
 @keyframes bgMove {
   0% { transform: translateX(-20%); }
@@ -223,236 +225,185 @@ body.dark::before, body.light::before {
 .container {
   max-width: 900px;
   margin: auto;
-  padding: 30px;
+  padding: 20px;
 }
 
 .theme-toggle {
   background: #444;
   color: white;
   border: none;
-  padding: 8px 15px;
-  border-radius: 8px;
-  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 50%;
   float: right;
+  cursor: pointer;
+  font-size: 18px;
 }
-.theme-toggle:hover { opacity: 0.8; }
 
 .title {
   text-align: center;
-  font-size: 34px;
-  font-weight: bold;
-  margin-bottom: 30px;
+  font-size: 32px;
+  font-weight: 800;
+  margin-top: 20px;
+  margin-bottom: 25px;
   background: linear-gradient(to right,#a855f7,#3b82f6);
   -webkit-background-clip: text;
   color: transparent;
 }
 
 .card {
-  background: rgba(255,255,255,0.10);
-  padding: 25px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  border: 1px solid rgba(255,255,255,0.2);
-  box-shadow: 0 0 25px rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.12);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  margin-bottom: 25px;
 }
 
-.form { display: grid; gap: 15px; }
+.form { display: grid; gap: 14px; }
 
 .input {
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: none;
   font-size: 15px;
 }
 
 .button {
   padding: 12px;
-  background: linear-gradient(to right,#7c3aed,#2563eb);
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  background: linear-gradient(to right,#7c3aed,#2563eb);
   color: white;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
 }
-.button:hover { opacity: 0.8; }
-
-.error { color: #ff5959; }
-.success { color: #4ade80; }
 
 .table-wrapper {
-  background: rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 15px;
+  overflow-x: auto;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.10);
   border: 1px solid rgba(255,255,255,0.15);
 }
 
-.table { width: 100%; border-collapse: collapse; }
+.table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+}
 
 th {
-  padding: 12px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.15);
 }
 
 td {
-  padding: 12px;
   border-top: 1px solid rgba(255,255,255,0.15);
 }
 
-.shorturl {
-  max-width: 200px;
+.shorturl, .url {
+  max-width: 180px;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.shorturl a {
+
+.shorturl a, .url a {
   color: #60a5fa;
   text-decoration: none;
 }
-.shorturl a:hover { text-decoration: underline; }
+
+.shorturl a:hover, .url a:hover {
+  text-decoration: underline;
+}
 
 .code {
   font-weight: bold;
   color: #c084fc;
 }
 
-.url {
-  max-width: 260px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 .center { text-align: center; }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
+.actions { display: flex; gap: 8px; }
 
-.copy-btn,
-.stats-btn,
-.delete-btn {
+.copy-btn, .stats-btn, .delete-btn {
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
   border: none;
-  text-decoration: none;
+  cursor: pointer;
+  font-size: 13px;
 }
 
-.copy-btn {
-  background: #2563eb;
-  color: white;
-}
-
-.stats-btn {
-  background: #facc15;
-  color: black;
-}
-
-.delete-btn {
-  background: #dc2626;
-  color: white;
-}
-
-.copy-btn:hover,
-.stats-btn:hover,
-.delete-btn:hover {
-  opacity: 0.8;
-}
+.copy-btn { background: #2563eb; color: white; }
+.stats-btn { background: #facc15; color: black; }
+.delete-btn { background: #dc2626; color: white; }
 
 .empty {
-  color: grey;
   text-align: center;
   padding: 20px;
+  color: #aaa;
 }
 
-/* MODAL */
-.modal-overlay {
+/* Mobile */
+@media (max-width: 600px) {
+  .title { font-size: 26px; }
+  .input, .button { font-size: 14px; }
+  .actions { flex-direction: column; }
+  .copy-btn, .stats-btn, .delete-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Modal */
+.overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.25s ease-out;
-  z-index: 1000;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-box {
-  width: 320px;
+.popup {
+  width: 300px;
   background: rgba(255,255,255,0.12);
-  border-radius: 14px;
   padding: 25px;
-  box-shadow: 0 0 18px rgba(0,0,0,0.45);
-  animation: popupIn 0.25s ease-out;
-  border: 1px solid rgba(255,255,255,0.25);
-  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  animation: zoom .2s ease-out;
 }
 
-body.light .modal-box {
-  background: white;
-  color: black;
-  border: 1px solid #ddd;
-}
-
-@keyframes popupIn {
+@keyframes zoom {
   from { transform: scale(0.85); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
-.modal-title {
-  font-size: 22px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.modal-text {
-  text-align: center;
-  margin-bottom: 22px;
-  font-size: 15px;
-}
-
-.modal-buttons {
+.popup-buttons {
   display: flex;
-  justify-content: space-between;
   gap: 10px;
 }
 
-.modal-cancel,
-.modal-delete {
+.btn {
   flex: 1;
-  padding: 10px 10px;
-  border-radius: 8px;
-  font-size: 15px;
-  border: none;
+  padding: 10px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: 0.2s;
+  border: none;
 }
 
-.modal-cancel {
-  background: grey;
-  color: white;
-}
+.cancel { background: #6b7280; color: white; }
+.delete { background: #dc2626; color: white; }
 
-.modal-delete {
-  background: #dc2626;
-  color: white;
-}
-
-.modal-cancel:hover,
-.modal-delete:hover {
-  opacity: 0.85;
-}
+.btn:hover { opacity: 0.85; }
       `}</style>
+
     </div>
   );
 }
