@@ -179,7 +179,7 @@ export default function Home() {
               </div>
 
               <div className="mobile-btns">
-                <button className="copy" onClick={() => safeCopy(shortUrl)}>Copy</button>
+                <button className="copy">Copy</button>
                 <a className="stats" href={`/code/${l.code}`}>Stats</a>
                 <button className="delete" onClick={() => showDelete(l.code)}>Delete</button>
               </div>
@@ -204,12 +204,22 @@ export default function Home() {
 
       <style>{`
 
+/* MAIN FIXES INCLUDED BELOW ↓ */
+
+/* GLOBAL */
 body { margin:0; padding:0; transition:.3s; }
 body.dark { background:#0a0a0a; color:white; }
-body.light { background:white; color:black; }
+body.light { background:white; color:#111; }
 
+/* FIX LIGHT THEME TEXT */
+body.light * {
+  color:#111 !important;
+}
+
+/* CONTAINER */
 .container { max-width:900px; margin:auto; padding:20px; }
 
+/* THEME TOGGLE */
 .themeToggle {
   width:50px; height:26px; background:#444;
   border-radius:50px; padding:3px; cursor:pointer;
@@ -222,6 +232,7 @@ body.light { background:white; color:black; }
 body.light .themeToggle { background:#ccc; }
 body.light .thumb { transform:translateX(24px); }
 
+/* TITLE */
 .title {
   text-align:center; font-size:32px; margin-top:50px;
   font-weight:800;
@@ -229,64 +240,71 @@ body.light .thumb { transform:translateX(24px); }
   -webkit-background-clip:text; color:transparent;
 }
 
+/* CARD */
 .card {
   background:#1e1e1e; padding:20px; border-radius:14px;
   margin-bottom:25px;
 }
-body.light .card { background:#f0f0f0; }
+body.light .card { background:#efefef; }
 
+/* FORM */
 .form { display:grid; gap:12px; }
-.input { padding:12px; border-radius:8px; border:none; }
+.input { padding:12px; border-radius:8px; border:none; background:white; color:black; }
+body.dark .input { background:#333; color:white; }
+
 .button {
   padding:12px; border:none; border-radius:8px;
   background:linear-gradient(to right,#7c3aed,#2563eb);
   color:white; font-size:16px;
 }
-.error { color:#ff5252; }
-.success { color:#4ade80; }
 
+.error { color:#ff5252 !important; }
+.success { color:#4ade80 !important; }
+
+/* TABLE */
 .table-wrapper {
   background:#111; padding:18px;
   border-radius:12px; border:1px solid #222;
 }
-.desktop-only { display:block; }
+body.light .table-wrapper { background:#f2f2f2; border-color:#ccc; }
 
 .clean-table { width:100%; border-collapse:collapse; }
+
 th {
   text-align:left; padding:12px;
   background:#181818;
   border-bottom:2px solid #222; color:#ccc;
-  font-size:15px;
 }
+body.light th { background:#e1e1e1; color:black; border-color:#ccc; }
+
 td {
   padding:12px; border-bottom:1px solid #222; color:#ddd;
-  font-size:15px;
 }
+body.light td { color:black; border-color:#ccc; }
 
-.long-url {
-  max-width:260px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
 .clean-table a { color:#60a5fa; }
+body.light .clean-table a { color:#2563eb !important; }
 
+/* BUTTONS */
 .btns {
   display:flex;
   gap:6px;
   justify-content:space-between;
 }
 .copy, .stats, .delete {
-  padding:6px 10px;
-  font-size:13px;
+  padding:8px 10px;
+  font-size:14px;
   border-radius:6px;
   border:none;
   cursor:pointer;
   flex:1;
   text-align:center;
 }
-.copy { background:#2563eb; color:white; }
-.stats { background:#facc15; color:black; }
-.delete { background:#dc2626; color:white; }
+.copy { background:#2563eb; color:white !important; }
+.stats { background:#facc15; color:black !important; }
+.delete { background:#dc2626; color:white !important; }
 
+/* MOBILE */
 .mobile-list { display:none; }
 
 @media(max-width:650px){
@@ -300,28 +318,33 @@ td {
     border:1px solid #222;
     margin-bottom:15px;
   }
+  body.light .link-card { background:#efefef; border-color:#ccc; }
 
-  .field { margin-bottom:8px; }
-  label { font-size:13px; opacity:.7; display:block; margin-bottom:3px; }
-  .long { word-break:break-all; }
-  a { color:#60a5fa; }
+  label { opacity:0.9 !important; }
 
+  a { color:#60a5fa !important; }
+  body.light a { color:#2563eb !important; }
+
+  /* FIXED BUTTON WIDTH */
   .mobile-btns {
     margin-top:12px;
     display:flex;
     flex-direction:column;
-    gap:6px;
+    gap:10px;
   }
 
   .mobile-btns .copy,
   .mobile-btns .stats,
   .mobile-btns .delete {
     width:100%;
-    padding:8px;
-    font-size:14px;
+    display:block;
+    text-align:center;
+    padding:12px;
+    font-size:15px;
   }
 }
 
+/* MODAL */
 .overlay {
   position:fixed; inset:0; background:rgba(0,0,0,.85);
   display:flex; justify-content:center; align-items:center;
@@ -332,14 +355,16 @@ td {
 }
 body.light .popup { background:white; color:black; }
 
-.popup-buttons { display:flex; gap:10px; margin-top:20px; }
+.popup-buttons {
+  display:flex; gap:10px; margin-top:20px;
+}
 
 .btn {
   flex:1; padding:10px; border:none;
   border-radius:10px; cursor:pointer;
 }
-.cancel { background:#777; color:white; }
-.delete { background:#dc2626; color:white; }
+.cancel { background:#777; color:white !important; }
+.delete { background:#dc2626; color:white !important; }
 
       `}</style>
     </div>
