@@ -166,7 +166,7 @@ export default function Home() {
               <div key={l.code} className="mobile-card">
                 <div className="mobile-row">
                   <span>Short URL</span>
-                  <a href={short} target="_blank" rel="noopener">
+                  <a href={short} target="_blank" rel="noopener" className="url-text">
                     {short}
                   </a>
                 </div>
@@ -176,7 +176,7 @@ export default function Home() {
                 </div>
                 <div className="mobile-row">
                   <span>Long URL</span>
-                  <a href={l.url} target="_blank" rel="noopener" className="long-mobile">
+                  <a href={l.url} target="_blank" rel="noopener" className="url-text long-mobile">
                     {l.url}
                   </a>
                 </div>
@@ -278,12 +278,22 @@ export default function Home() {
         th, td { padding: 14px; text-align: left; }
         th { background: rgba(0,0,0,0.4); font-weight: 600; }
         body.light th { background: #f1f5f9; }
+        .long a { word-break: break-all; }
 
         .actions { white-space: nowrap; }
         .act { padding: 8px 12px; margin-right: 6px; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
         .copy { background: #2563eb; color: white; }
         .stats { background: #facc15; color: black; }
         .delete { background: #dc2626; color: white; }
+
+        /* Mobile URL Fix - Ab bilkul bahar nahi jayega */
+        .url-text {
+          word-break: break-all;
+          overflow-wrap: anywhere;
+          hyphens: auto;
+          max-width: 70vw;
+          font-size: 0.9rem;
+        }
 
         @media (max-width: 768px) {
           .desktop-table { display: none; }
@@ -292,13 +302,13 @@ export default function Home() {
           .main-input { padding: 20px 22px; font-size: 1.1rem; }
           .create-btn { padding: 20px; font-size: 1.2rem; margin-top: 28px; }
 
-          .mobile-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+          .mobile-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 18px; margin-bottom: 16px; overflow: hidden; }
           body.light .mobile-card { background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-          .mobile-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; }
+          .mobile-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; gap: 12px; }
           body.light .mobile-row { border-color: #e5e7eb; }
           .mobile-row:last-of-type { border: none; }
-          .mobile-row span:first-child { opacity: 0.8; min-width: 100px; }
+          .mobile-row span:first-child { opacity: 0.8; min-width: 100px; flex-shrink: 0; }
 
           .mobile-actions { display: flex; gap: 10px; margin-top: 16px; }
           .mobile-actions .act { flex: 1; padding: 14px; font-size: 1rem; }
