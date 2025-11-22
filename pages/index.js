@@ -16,12 +16,10 @@ export default function Home() {
 
   useEffect(() => {
     document.body.classList.add("dark");
-
     if (localStorage.getItem("theme") === "light") {
       document.body.classList.remove("dark");
       document.body.classList.add("light");
     }
-
     fetchLinks();
     const interval = setInterval(fetchLinks, 3000);
     return () => clearInterval(interval);
@@ -31,20 +29,16 @@ export default function Home() {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     const res = await fetch("/api/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, code }),
     });
-
     const data = await res.json();
-
     if (res.status !== 201) {
       setError(data.error);
       return;
     }
-
     setUrl("");
     setCode("");
     setSuccess(`Short link created — Code: ${data.code}`);
@@ -62,6 +56,21 @@ export default function Home() {
     fetchLinks();
   }
 
+  async function safeCopy(text) {
+    try {
+      await navigator?.clipboard?.writeText(text);
+      alert("Copied!");
+    } catch {
+      const t = document.createElement("input");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      t.remove();
+      alert("Copied!");
+    }
+  }
+
   function toggleTheme() {
     if (document.body.classList.contains("light")) {
       document.body.classList.remove("light");
@@ -76,7 +85,6 @@ export default function Home() {
 
   return (
     <div className="container">
-
       <div className="themeToggle" onClick={toggleTheme}>
         <div className="thumb"></div>
       </div>
@@ -108,62 +116,76 @@ export default function Home() {
         </form>
       </div>
 
-      <div className="table-container">
-        <table className="table">
+      <div className="table-wrapper desktop-only">
+        <table className="clean-table">
           <thead>
             <tr>
-              <th>Short URL</th>
-              <th>Code</th>
-              <th>Long URL</th>
-              <th>Clicks</th>
-              <th>Actions</th>
+              <th style={{ width: "23%" }}>Short URL</th>
+              <th style={{ width: "12%" }}>Code</th>
+              <th style={{ width: "33%" }}>Long URL</th>
+              <th style={{ width: "10%" }}>Clicks</th>
+              <th style={{ width: "22%" }}>Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {links.map((l) => {
-              const shortUrl =
-                typeof window !== "undefined"
-                  ? `${window.location.origin}/${l.code}`
-                  : "";
-
+              const shortUrl = `${window.location.origin}/${l.code}`;
               return (
                 <tr key={l.code}>
-                  <td>
-                    <a href={shortUrl} target="_blank">{shortUrl}</a>
-                  </td>
-
+                  <td><a href={shortUrl} target="_blank">{shortUrl}</a></td>
                   <td>{l.code}</td>
-
-                  <td className="url">
+                  <td className="long-url">
                     <a href={l.url} target="_blank">{l.url}</a>
                   </td>
-
                   <td>{l.clicks}</td>
 
-                  <td className="actions">
-                    <button className="copy-btn"
-                      onClick={() => navigator.clipboard.writeText(shortUrl)}>
-                      Copy
-                    </button>
-
-                    <a className="stats-btn" href={`/code/${l.code}`}>Stats</a>
-
-                    <button className="delete-btn"
-                      onClick={() => showDelete(l.code)}>
-                      Delete
-                    </button>
+                  <td className="btns">
+                    <button className="copy" onClick={() => safeCopy(shortUrl)}>Copy</button>
+                    <a className="stats" href={`/code/${l.code}`}>Stats</a>
+                    <button className="delete" onClick={() => showDelete(l.code)}>Delete</button>
                   </td>
                 </tr>
               );
             })}
-
-            {links.length === 0 && (
-              <tr><td colSpan="5" className="empty">No links created yet</td></tr>
-            )}
           </tbody>
 
         </table>
+      </div>
+
+      <div className="mobile-list">
+        {links.map((l) => {
+          const shortUrl = `${window.location.origin}/${l.code}`;
+          return (
+            <div className="link-card" key={l.code}>
+              <div className="field">
+                <label>Short URL</label>
+                <a href={shortUrl} target="_blank">{shortUrl}</a>
+              </div>
+
+              <div className="field">
+                <label>Code</label>
+                <p>{l.code}</p>
+              </div>
+
+              <div className="field">
+                <label>Long URL</label>
+                <a href={l.url} target="_blank" className="long">{l.url}</a>
+              </div>
+
+              <div className="field">
+                <label>Clicks</label>
+                <p>{l.clicks}</p>
+              </div>
+
+              <div className="mobile-btns">
+                <button className="copy" onClick={() => safeCopy(shortUrl)}>Copy</button>
+                <a className="stats" href={`/code/${l.code}`}>Stats</a>
+                <button className="delete" onClick={() => showDelete(l.code)}>Delete</button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {showModal && (
@@ -182,162 +204,139 @@ export default function Home() {
 
       <style>{`
 
-body {
-  margin: 0;
-  padding: 0;
-  transition: .3s;
-}
+body { margin:0; padding:0; transition:.3s; }
+body.dark { background:#0a0a0a; color:white; }
+body.light { background:white; color:black; }
 
-body.dark { background: #0a0a0a; color: white; }
-body.light { background: white; color: black; }
+.container { max-width:900px; margin:auto; padding:20px; }
 
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
-}
-
-/* Toggle */
 .themeToggle {
-  width: 50px;
-  height: 26px;
-  background: #444;
-  border-radius: 20px;
-  padding: 3px;
-  cursor: pointer;
-  position: absolute;
-  right: 20px;
-  top: 20px;
+  width:50px; height:26px; background:#444;
+  border-radius:50px; padding:3px; cursor:pointer;
+  position:absolute; right:20px; top:20px;
 }
-.themeToggle .thumb {
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  transition: .3s;
+.thumb {
+  width:20px; height:20px; background:white;
+  border-radius:50%; transition:.3s;
 }
-body.light .themeToggle {
-  background: #ccc;
-}
-body.light .themeToggle .thumb {
-  transform: translateX(24px);
-}
+body.light .themeToggle { background:#ccc; }
+body.light .thumb { transform:translateX(24px); }
 
-/* Title */
 .title {
-  text-align: center;
-  font-size: 32px;
-  margin-top: 50px;
-  font-weight: 800;
-  background: linear-gradient(to right,#a855f7,#3b82f6);
-  -webkit-background-clip: text;
-  color: transparent;
+  text-align:center; font-size:32px; margin-top:50px;
+  font-weight:800;
+  background:linear-gradient(to right,#a855f7,#3b82f6);
+  -webkit-background-clip:text; color:transparent;
 }
 
-/* Form */
 .card {
-  background: #1e1e1e;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 25px;
+  background:#1e1e1e; padding:20px; border-radius:14px;
+  margin-bottom:25px;
 }
-body.light .card { background: #efefef; }
+body.light .card { background:#f0f0f0; }
 
-.form {
-  display: grid;
-  gap: 14px;
-}
-.input {
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-}
+.form { display:grid; gap:12px; }
+.input { padding:12px; border-radius:8px; border:none; }
 .button {
-  padding: 12px;
-  border: none;
-  color: white;
-  background: linear-gradient(to right,#7c3aed,#2563eb);
-  border-radius: 8px;
-  font-size: 16px;
+  padding:12px; border:none; border-radius:8px;
+  background:linear-gradient(to right,#7c3aed,#2563eb);
+  color:white; font-size:16px;
 }
-.error { color: #ff5252; }
-.success { color: #4ade80; }
+.error { color:#ff5252; }
+.success { color:#4ade80; }
 
-/* TABLE ALWAYS FULLY VISIBLE */
-.table-container {
-  width: 100%;
-  overflow: hidden;
+.table-wrapper {
+  background:#111; padding:18px;
+  border-radius:12px; border:1px solid #222;
 }
+.desktop-only { display:block; }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  padding: 12px;
-  border-bottom: 1px solid #333;
-}
+.clean-table { width:100%; border-collapse:collapse; }
 th {
-  background: #222;
+  text-align:left; padding:12px;
+  background:#181818;
+  border-bottom:2px solid #222; color:#ccc;
+  font-size:15px;
 }
-body.light th { background: #ddd; }
+td {
+  padding:12px; border-bottom:1px solid #222; color:#ddd;
+  font-size:15px;
+}
 
-/* URLs clickable */
-td a {
-  color: #60a5fa;
-  text-decoration: none;
-  word-break: break-all;
+.long-url {
+  max-width:260px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
+.clean-table a { color:#60a5fa; }
 
-/* Action Buttons */
-.actions {
-  display: flex;
-  gap: 6px;
-}
-.copy-btn, .stats-btn, .delete-btn {
-  padding: 7px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  border: none;
-  cursor: pointer;
-}
-.copy-btn { background: #2563eb; color: white; }
-.stats-btn { background: #facc15; color: black; }
-.delete-btn { background: #dc2626; color: white; }
-
-/* Solid Delete Popup */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.85);
+.btns {
   display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index: 9999;
+  gap:6px;
+  justify-content:space-between;
 }
-.popup {
-  background: #1e1e1e;
-  color:white;
-  padding: 25px;
-  width: 300px;
-  border-radius: 14px;
+.copy, .stats, .delete {
+  padding:6px 10px;
+  font-size:13px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  flex:1;
   text-align:center;
 }
-body.light .popup {
-  background:white;
-  color:black;
+.copy { background:#2563eb; color:white; }
+.stats { background:#facc15; color:black; }
+.delete { background:#dc2626; color:white; }
+
+.mobile-list { display:none; }
+
+@media(max-width:650px){
+  .desktop-only { display:none; }
+  .mobile-list { display:block; }
+
+  .link-card {
+    background:#151515;
+    padding:15px;
+    border-radius:10px;
+    border:1px solid #222;
+    margin-bottom:15px;
+  }
+
+  .field { margin-bottom:8px; }
+  label { font-size:13px; opacity:.7; display:block; margin-bottom:3px; }
+  .long { word-break:break-all; }
+  a { color:#60a5fa; }
+
+  .mobile-btns {
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .mobile-btns .copy,
+  .mobile-btns .stats,
+  .mobile-btns .delete {
+    width:100%;
+    padding:8px;
+    font-size:14px;
+  }
 }
-.popup-buttons {
-  display:flex;
-  gap:10px;
-  margin-top:20px;
+
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.85);
+  display:flex; justify-content:center; align-items:center;
 }
+.popup {
+  width:300px; background:#1e1e1e;
+  padding:25px; border-radius:12px; text-align:center;
+}
+body.light .popup { background:white; color:black; }
+
+.popup-buttons { display:flex; gap:10px; margin-top:20px; }
+
 .btn {
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
+  flex:1; padding:10px; border:none;
+  border-radius:10px; cursor:pointer;
 }
 .cancel { background:#777; color:white; }
 .delete { background:#dc2626; color:white; }
