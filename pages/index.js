@@ -15,15 +15,15 @@ export default function Home() {
   }
 
   useEffect(() => {
-    fetchLinks();
-
-    const interval = setInterval(fetchLinks, 3000);
+    document.body.classList.add("dark");
 
     if (localStorage.getItem("theme") === "light") {
       document.body.classList.remove("dark");
       document.body.classList.add("light");
     }
 
+    fetchLinks();
+    const interval = setInterval(fetchLinks, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,26 +63,28 @@ export default function Home() {
     fetchLinks();
   }
 
-  function copyToClipboard(text) {
-    navigator.clipboard.writeText(text);
-  }
-
   function toggleTheme() {
-    if (document.body.classList.contains("dark")) {
-      document.body.classList.remove("dark");
-      document.body.classList.add("light");
-      localStorage.setItem("theme", "light");
-    } else {
+    if (document.body.classList.contains("light")) {
       document.body.classList.remove("light");
       document.body.classList.add("dark");
       localStorage.setItem("theme", "dark");
+    } else {
+      document.body.classList.remove("dark");
+      document.body.classList.add("light");
+      localStorage.setItem("theme", "light");
     }
+  }
+
+  function copyToClipboard(txt) {
+    navigator.clipboard.writeText(txt);
   }
 
   return (
     <div className="container">
 
-      <button className="theme-toggle" onClick={toggleTheme}>🌓</button>
+      <div className="themeToggle" onClick={toggleTheme}>
+        <div className="thumb"></div>
+      </div>
 
       <h1 className="title">TinyLink – URL Shortener</h1>
 
@@ -111,6 +113,7 @@ export default function Home() {
         </form>
       </div>
 
+
       <div className="table-wrapper">
         <table className="table">
           <thead>
@@ -125,30 +128,23 @@ export default function Home() {
 
           <tbody>
             {links.map((l) => {
-              const shortUrl =
-                typeof window !== "undefined"
-                  ? `${window.location.origin}/${l.code}`
-                  : "";
-
+              const shortUrl = typeof window !== "undefined" ? `${window.location.origin}/${l.code}` : "";
               return (
                 <tr key={l.code}>
-                  <td className="shorturl">
+                  <td data-label="Short URL" className="shorturl">
                     <a href={shortUrl} target="_blank">{shortUrl}</a>
                   </td>
 
-                  <td className="code">{l.code}</td>
+                  <td data-label="Code" className="code">{l.code}</td>
 
-                  <td className="url">
+                  <td data-label="URL" className="url">
                     <a href={l.url} target="_blank">{l.url}</a>
                   </td>
 
-                  <td className="center">{l.clicks}</td>
+                  <td data-label="Clicks" className="center">{l.clicks}</td>
 
-                  <td className="actions">
-                    <button
-                      className="copy-btn"
-                      onClick={() => copyToClipboard(shortUrl)}
-                    >
+                  <td data-label="Actions" className="actions">
+                    <button className="copy-btn" onClick={() => copyToClipboard(shortUrl)}>
                       Copy
                     </button>
 
@@ -171,6 +167,7 @@ export default function Home() {
         </table>
       </div>
 
+
       {showModal && (
         <div className="overlay" onClick={() => setShowModal(false)}>
           <div className="popup" onClick={(e) => e.stopPropagation()}>
@@ -189,12 +186,13 @@ export default function Home() {
         </div>
       )}
 
+
       <style>{`
 
 body {
   margin: 0;
   padding: 0;
-  transition: .4s;
+  transition: .3s;
   overflow-x: hidden;
 }
 
@@ -222,29 +220,48 @@ body.dark::before, body.light::before {
   100% { transform: translateX(20%); }
 }
 
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
+/* Toggle Switch */
+.themeToggle {
+  width: 50px;
+  height: 26px;
+  background: #444;
+  border-radius: 20px;
+  padding: 3px;
+  cursor: pointer;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  transition: .3s;
+  display: flex;
+  align-items: center;
 }
 
-.theme-toggle {
-  background: #444;
-  color: white;
-  border: none;
-  padding: 8px 14px;
+.themeToggle .thumb {
+  width: 20px;
+  height: 20px;
+  background: white;
   border-radius: 50%;
-  float: right;
-  cursor: pointer;
-  font-size: 18px;
+  transition: .3s;
+}
+
+body.light .themeToggle {
+  background: #bbb;
+}
+body.light .themeToggle .thumb {
+  transform: translateX(24px);
+}
+
+.container {
+  max-width: 900px;
+  padding: 20px;
+  margin: auto;
 }
 
 .title {
   text-align: center;
+  margin-top: 40px;
   font-size: 32px;
   font-weight: 800;
-  margin-top: 20px;
-  margin-bottom: 25px;
   background: linear-gradient(to right,#a855f7,#3b82f6);
   -webkit-background-clip: text;
   color: transparent;
@@ -265,18 +282,16 @@ body.dark::before, body.light::before {
   padding: 12px;
   border-radius: 8px;
   border: none;
-  font-size: 15px;
 }
 
 .button {
   padding: 12px;
-  border: none;
   border-radius: 8px;
   background: linear-gradient(to right,#7c3aed,#2563eb);
   color: white;
-  cursor: pointer;
+  border: none;
   font-size: 16px;
-  font-weight: 700;
+  cursor: pointer;
 }
 
 .table-wrapper {
@@ -288,8 +303,8 @@ body.dark::before, body.light::before {
 
 .table {
   width: 100%;
-  min-width: 600px;
   border-collapse: collapse;
+  min-width: 650px;
 }
 
 th, td {
@@ -306,56 +321,58 @@ td {
 
 .shorturl, .url {
   max-width: 180px;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
 }
 
-.shorturl a, .url a {
-  color: #60a5fa;
-  text-decoration: none;
-}
+.shorturl a, .url a { color: #60a5fa; }
 
-.shorturl a:hover, .url a:hover {
-  text-decoration: underline;
-}
-
-.code {
-  font-weight: bold;
-  color: #c084fc;
-}
-
-.center { text-align: center; }
+.code { font-weight: bold; color: #c084fc; }
 
 .actions { display: flex; gap: 8px; }
 
 .copy-btn, .stats-btn, .delete-btn {
-  padding: 6px 12px;
+  padding: 7px 12px;
   border-radius: 6px;
+  font-size: 13px;
   border: none;
   cursor: pointer;
-  font-size: 13px;
 }
 
 .copy-btn { background: #2563eb; color: white; }
 .stats-btn { background: #facc15; color: black; }
 .delete-btn { background: #dc2626; color: white; }
 
-.empty {
-  text-align: center;
-  padding: 20px;
-  color: #aaa;
-}
+.empty { text-align:center; padding:20px; color:#aaa; }
 
-/* Mobile */
-@media (max-width: 600px) {
-  .title { font-size: 26px; }
-  .input, .button { font-size: 14px; }
-  .actions { flex-direction: column; }
-  .copy-btn, .stats-btn, .delete-btn {
-    width: 100%;
-    text-align: center;
+/* MOBILE RESPONSIVE TABLE */
+@media(max-width:700px){
+  table, thead, tbody, th, td, tr { display:block; width:100%; }
+
+  th { display:none; }
+
+  tr {
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 12px;
   }
+
+  td {
+    border: none;
+    display:flex;
+    justify-content: space-between;
+    padding: 8px 5px;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    opacity: .8;
+  }
+
+  .actions { flex-direction: column; }
 }
 
 /* Modal */
@@ -363,47 +380,46 @@ td {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  backdrop-filter: blur(5px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
 .popup {
   width: 300px;
   background: rgba(255,255,255,0.12);
-  padding: 25px;
   border-radius: 16px;
-  text-align: center;
+  padding: 25px;
+  animation: zoom .2s ease-out;
+  text-align:center;
   border: 1px solid rgba(255,255,255,0.15);
   backdrop-filter: blur(20px);
-  animation: zoom .2s ease-out;
 }
 
 @keyframes zoom {
-  from { transform: scale(0.85); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from { transform: scale(.85); opacity:0; }
+  to { transform: scale(1); opacity:1; }
 }
 
 .popup-buttons {
-  display: flex;
-  gap: 10px;
+  display:flex;
+  gap:10px;
+  margin-top:20px;
 }
 
 .btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: none;
+  flex:1;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
 }
 
-.cancel { background: #6b7280; color: white; }
-.delete { background: #dc2626; color: white; }
+.cancel { background:#6b7280; color:white; }
+.delete { background:#dc2626; color:white; }
 
-.btn:hover { opacity: 0.85; }
       `}</style>
-
     </div>
   );
 }
