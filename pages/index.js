@@ -59,7 +59,6 @@ export default function Home() {
   async function confirmDelete() {
     await fetch(`/api/links/${deleteCode}`, { method: "DELETE" });
     setShowModal(false);
-    setDeleteCode("");
     fetchLinks();
   }
 
@@ -73,10 +72,6 @@ export default function Home() {
       document.body.classList.add("light");
       localStorage.setItem("theme", "light");
     }
-  }
-
-  function copyToClipboard(txt) {
-    navigator.clipboard.writeText(txt);
   }
 
   return (
@@ -113,14 +108,13 @@ export default function Home() {
         </form>
       </div>
 
-
-      <div className="table-wrapper">
+      <div className="table-container">
         <table className="table">
           <thead>
             <tr>
-              <th>Short</th>
+              <th>Short URL</th>
               <th>Code</th>
-              <th>URL</th>
+              <th>Long URL</th>
               <th>Clicks</th>
               <th>Actions</th>
             </tr>
@@ -128,29 +122,35 @@ export default function Home() {
 
           <tbody>
             {links.map((l) => {
-              const shortUrl = typeof window !== "undefined" ? `${window.location.origin}/${l.code}` : "";
+              const shortUrl =
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/${l.code}`
+                  : "";
+
               return (
                 <tr key={l.code}>
-                  <td data-label="Short URL" className="shorturl">
+                  <td>
                     <a href={shortUrl} target="_blank">{shortUrl}</a>
                   </td>
 
-                  <td data-label="Code" className="code">{l.code}</td>
+                  <td>{l.code}</td>
 
-                  <td data-label="URL" className="url">
+                  <td className="url">
                     <a href={l.url} target="_blank">{l.url}</a>
                   </td>
 
-                  <td data-label="Clicks" className="center">{l.clicks}</td>
+                  <td>{l.clicks}</td>
 
-                  <td data-label="Actions" className="actions">
-                    <button className="copy-btn" onClick={() => copyToClipboard(shortUrl)}>
+                  <td className="actions">
+                    <button className="copy-btn"
+                      onClick={() => navigator.clipboard.writeText(shortUrl)}>
                       Copy
                     </button>
 
                     <a className="stats-btn" href={`/code/${l.code}`}>Stats</a>
 
-                    <button className="delete-btn" onClick={() => showDelete(l.code)}>
+                    <button className="delete-btn"
+                      onClick={() => showDelete(l.code)}>
                       Delete
                     </button>
                   </td>
@@ -159,33 +159,26 @@ export default function Home() {
             })}
 
             {links.length === 0 && (
-              <tr>
-                <td colSpan="5" className="empty">No links created yet</td>
-              </tr>
+              <tr><td colSpan="5" className="empty">No links created yet</td></tr>
             )}
           </tbody>
+
         </table>
       </div>
 
-
       {showModal && (
-        <div className="overlay" onClick={() => setShowModal(false)}>
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
+        <div className="overlay">
+          <div className="popup">
             <h3>Delete Link?</h3>
-            <p>Are you sure you want to delete <b>{deleteCode}</b>?</p>
+            <p>Delete <b>{deleteCode}</b>?</p>
 
             <div className="popup-buttons">
-              <button className="btn cancel" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button className="btn delete" onClick={confirmDelete}>
-                Delete
-              </button>
+              <button className="btn cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn delete" onClick={confirmDelete}>Delete</button>
             </div>
           </div>
         </div>
       )}
-
 
       <style>{`
 
@@ -193,34 +186,18 @@ body {
   margin: 0;
   padding: 0;
   transition: .3s;
-  overflow-x: hidden;
 }
 
-body.dark {
-  background: #0a0a0a;
-  color: white;
-}
-body.light {
-  background: #f0f0f0;
-  color: black;
+body.dark { background: #0a0a0a; color: white; }
+body.light { background: white; color: black; }
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
 }
 
-body.dark::before, body.light::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  animation: bgMove 10s infinite alternate;
-  background: linear-gradient(120deg,#3b82f6,#a855f7,#ec4899);
-  filter: blur(150px);
-  opacity: .18;
-}
-@keyframes bgMove {
-  0% { transform: translateX(-20%); }
-  100% { transform: translateX(20%); }
-}
-
-/* Toggle Switch */
+/* Toggle */
 .themeToggle {
   width: 50px;
   height: 26px;
@@ -231,11 +208,7 @@ body.dark::before, body.light::before {
   position: absolute;
   right: 20px;
   top: 20px;
-  transition: .3s;
-  display: flex;
-  align-items: center;
 }
-
 .themeToggle .thumb {
   width: 20px;
   height: 20px;
@@ -243,95 +216,84 @@ body.dark::before, body.light::before {
   border-radius: 50%;
   transition: .3s;
 }
-
 body.light .themeToggle {
-  background: #bbb;
+  background: #ccc;
 }
 body.light .themeToggle .thumb {
   transform: translateX(24px);
 }
 
-.container {
-  max-width: 900px;
-  padding: 20px;
-  margin: auto;
-}
-
+/* Title */
 .title {
   text-align: center;
-  margin-top: 40px;
   font-size: 32px;
+  margin-top: 50px;
   font-weight: 800;
   background: linear-gradient(to right,#a855f7,#3b82f6);
   -webkit-background-clip: text;
   color: transparent;
 }
 
+/* Form */
 .card {
-  background: rgba(255,255,255,0.12);
-  padding: 20px;
+  background: #1e1e1e;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(10px);
+  padding: 20px;
   margin-bottom: 25px;
 }
+body.light .card { background: #efefef; }
 
-.form { display: grid; gap: 14px; }
-
+.form {
+  display: grid;
+  gap: 14px;
+}
 .input {
   padding: 12px;
   border-radius: 8px;
   border: none;
 }
-
 .button {
   padding: 12px;
-  border-radius: 8px;
-  background: linear-gradient(to right,#7c3aed,#2563eb);
-  color: white;
   border: none;
+  color: white;
+  background: linear-gradient(to right,#7c3aed,#2563eb);
+  border-radius: 8px;
   font-size: 16px;
-  cursor: pointer;
 }
+.error { color: #ff5252; }
+.success { color: #4ade80; }
 
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.15);
+/* TABLE ALWAYS FULLY VISIBLE */
+.table-container {
+  width: 100%;
+  overflow: hidden;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 650px;
 }
-
 th, td {
   padding: 12px;
+  border-bottom: 1px solid #333;
 }
-
 th {
-  background: rgba(255,255,255,0.15);
+  background: #222;
+}
+body.light th { background: #ddd; }
+
+/* URLs clickable */
+td a {
+  color: #60a5fa;
+  text-decoration: none;
+  word-break: break-all;
 }
 
-td {
-  border-top: 1px solid rgba(255,255,255,0.15);
+/* Action Buttons */
+.actions {
+  display: flex;
+  gap: 6px;
 }
-
-.shorturl, .url {
-  max-width: 180px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.shorturl a, .url a { color: #60a5fa; }
-
-.code { font-weight: bold; color: #c084fc; }
-
-.actions { display: flex; gap: 8px; }
-
 .copy-btn, .stats-btn, .delete-btn {
   padding: 7px 12px;
   border-radius: 6px;
@@ -339,84 +301,45 @@ td {
   border: none;
   cursor: pointer;
 }
-
 .copy-btn { background: #2563eb; color: white; }
 .stats-btn { background: #facc15; color: black; }
 .delete-btn { background: #dc2626; color: white; }
 
-.empty { text-align:center; padding:20px; color:#aaa; }
-
-/* MOBILE RESPONSIVE TABLE */
-@media(max-width:700px){
-  table, thead, tbody, th, td, tr { display:block; width:100%; }
-
-  th { display:none; }
-
-  tr {
-    background: rgba(255,255,255,0.08);
-    margin-bottom: 12px;
-    padding: 10px;
-    border-radius: 12px;
-  }
-
-  td {
-    border: none;
-    display:flex;
-    justify-content: space-between;
-    padding: 8px 5px;
-  }
-
-  td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    opacity: .8;
-  }
-
-  .actions { flex-direction: column; }
-}
-
-/* Modal */
+/* Solid Delete Popup */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(5px);
+  background: rgba(0,0,0,.85);
   display:flex;
   justify-content:center;
   align-items:center;
+  z-index: 9999;
 }
-
 .popup {
-  width: 300px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 16px;
+  background: #1e1e1e;
+  color:white;
   padding: 25px;
-  animation: zoom .2s ease-out;
+  width: 300px;
+  border-radius: 14px;
   text-align:center;
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(20px);
 }
-
-@keyframes zoom {
-  from { transform: scale(.85); opacity:0; }
-  to { transform: scale(1); opacity:1; }
+body.light .popup {
+  background:white;
+  color:black;
 }
-
 .popup-buttons {
   display:flex;
   gap:10px;
   margin-top:20px;
 }
-
 .btn {
   flex:1;
   padding:10px;
-  border-radius:10px;
   border:none;
+  border-radius:10px;
   cursor:pointer;
 }
-
-.cancel { background:#6b7280; color:white; }
+.cancel { background:#777; color:white; }
 .delete { background:#dc2626; color:white; }
 
       `}</style>
